@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  trailingSlash: false, // or false, depending on your desired behavior
 };
 
 export default nextConfig;
