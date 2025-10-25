@@ -15,7 +15,7 @@
 #define TONE_3 2000
 #define TONE_4 2400
 
-#define MAX_LEVEL 50 //i know this shouldnt be here :P
+#define MAX_LEVEL 20 //i know this shouldnt be here :P
 
 void Output(int LEDPin, int freq, int durationMS);
 int CheckInputs(); //returns the index of button pressed and outputs relevant light and sound for button
