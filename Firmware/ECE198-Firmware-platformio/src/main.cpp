@@ -5,16 +5,18 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
+#define SLEEPPIN GPIO_NUM_32
+
 // put function declarations here:
-void IncorrectAnswer();
+void PowerOff(); //wake up when a game on button is pressed
+void DeepSleep(); //wake up when a game start is pressed
 
 void setup() {
   // put your setup code here, to run once:
-
-  Serial.begin(9600); //TEMP
+  Serial.begin(9600);
 
   ledcSetup(0, 2000, 8);
-  ledcAttachPin(SPEAKER_PIN, 0); //maybe???
+  ledcAttachPin(SPEAKER_PIN, 1); //maybe???
 
   while (!ConnectToWifi())
     Serial.println("Connecting to wifi...");
@@ -37,15 +39,16 @@ void setup() {
 
 int currentLevel = 1;
 static int times[MAX_LEVEL];
+static int sequence[MAX_LEVEL];
 
 void loop() {
+  if (digitalRead(SLEEPPIN))
+    Serial.println("youre cooked");
+  else
+    Serial.println("youre not");
   // put your main code here, to run repeatedly:
-  
-  int sequence[MAX_LEVEL];
-  for (int i = 0; i < currentLevel; i++) { //generate random sequence
-    int rand = random(1,5); //random between 1 and 4 inclusive
-    sequence[i] = rand;
-  }
+  int rand = random(1,5); //random between 1 and 4 inclusive
+  sequence[currentLevel - 1] = rand;
 
   //output the sequence here
   for (int i = 0; i < currentLevel; i++) {
@@ -99,8 +102,29 @@ void loop() {
       AddDataToBuf((uint8_t*)&(times[i]), sizeof(times[i]));
     }
     AddDataToBuf((uint8_t*)&currentLevel, sizeof(int));
-    TransmitData();
+    TransmitData(); //time1, time2,... level player in on,
     
     currentLevel = 1;
   }
+  
+  DeepSleep();
+}
+
+void PowerOff() {
+  //wake up when power button pressed
+}
+
+
+void DeepSleep() {
+  //wake up when game start high signal on pin4
+  Serial.println("Sleeping...");
+  esp_sleep_enable_ext0_wakeup(SLEEPPIN, 0); //1 high 0 low
+
+  pinMode(SLEEPPIN, INPUT_PULLUP);
+
+  gpio_deep_sleep_hold_en();
+
+  Serial.flush();
+  delay(200);
+  esp_deep_sleep_start(); 
 }
