@@ -6,7 +6,7 @@
 
 char ssid[] = "UniversityOfWaterloo"; //SSID/name
 //char pass[] = "grahwahh"; //password
-char url[] = "http://webhook.site/2128266b-96bc-4ee1-ab6f-751a862ec269"; //url to post to 
+char url[] =/*"http://webhook.site/2128266b-96bc-4ee1-ab6f-751a862ec269"*/"https://ece-198-performance-monitoring-game-seven.vercel.app/api/apitest"; //url to post to 
 
 WiFiClient wifi;
 int status = WL_IDLE_STATUS;
@@ -95,6 +95,7 @@ void TransmitData() {
     if (httpResponseCode > 0) {
         String response = http.getString();
         Serial.println(httpResponseCode);
+        Serial.print("response: ");
         Serial.println(response);
         currentBufferIndex = 0;
     } 

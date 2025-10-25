@@ -5,8 +5,12 @@ export async function POST(request) {
   // process `bytes` here
   console.log('Received', bytes.length, 'bytes');
 
-  return new Response(JSON.stringify({ received: bytes.length }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  // return the length and the actual bytes (as array of numbers)
+  return new Response(
+    JSON.stringify({ received: bytes.length, bytes: Array.from(bytes) }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 }

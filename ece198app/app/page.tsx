@@ -3,23 +3,38 @@
 import { useState } from 'react';
 
 export default function Home() {
-  const [response, setResponse] = useState('');
+  const [response, setResponse] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   async function sendTestData() {
+    setError(null);
     // create fake binary data for test
     const bytes = new Uint8Array([1, 2, 3, 4]);
-    const res = await fetch('/api/apitest', {
-      method: 'POST',
-      body: bytes,
-    });
-    const data = await res.json();
-    setResponse(JSON.stringify(data));
+
+    try {
+      const res = await fetch('/api/apitest', {
+        method: 'POST',
+        body: bytes,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Server error: ${res.status} ${text}`);
+      }
+
+      const data = await res.json();
+      // pretty display: length and bytes array
+      setResponse(JSON.stringify(data, null, 2));
+    } catch (err: any) {
+      setError(err.message || 'Unknown error');
+    }
   }
 
   return (
     <main style={{ padding: 20 }}>
       <button onClick={sendTestData}>Send Test Binary</button>
-      <p>Response: {response}</p>
+      {error ? <p style={{ color: 'red' }}>Error: {error}</p> : null}
+      <pre>Response: {response}</pre>
     </main>
   );
 }
