@@ -101,3 +101,7 @@ void TransmitData() {
     }
     http.end();
 }
+
+void DisconnectWifi() {
+    WiFi.disconnect(true);
+}

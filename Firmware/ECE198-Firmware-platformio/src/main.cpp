@@ -106,7 +106,8 @@ void loop() {
     
     currentLevel = 1;
   }
-  
+
+  DisconnectWifi();
   DeepSleep();
 }
 
