@@ -42,10 +42,6 @@ static int times[MAX_LEVEL];
 static int sequence[MAX_LEVEL];
 
 void loop() {
-  if (digitalRead(SLEEPPIN))
-    Serial.println("youre cooked");
-  else
-    Serial.println("youre not");
   // put your main code here, to run repeatedly:
   int rand = random(1,5); //random between 1 and 4 inclusive
   sequence[currentLevel - 1] = rand;
@@ -105,16 +101,11 @@ void loop() {
     TransmitData(); //time1, time2,... level player in on,
     
     currentLevel = 1;
+    DisconnectWifi();
+    DeepSleep();
   }
 
-  DisconnectWifi();
-  DeepSleep();
 }
-
-void PowerOff() {
-  //wake up when power button pressed
-}
-
 
 void DeepSleep() {
   //wake up when game start high signal on pin4
