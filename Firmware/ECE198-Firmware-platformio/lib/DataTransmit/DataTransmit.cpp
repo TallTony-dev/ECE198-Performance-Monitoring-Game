@@ -6,14 +6,14 @@
 
 char ssid[] = "UniversityOfWaterloo"; //SSID/name
 //char pass[] = "grahwahh"; //password
-char url[] ="http://webhook.site/2128266b-96bc-4ee1-ab6f-751a862ec269"; //url to post to 
+char url[] = "http://webhook.site/2128266b-96bc-4ee1-ab6f-751a862ec269"; //url to post to 
 
 WiFiClient wifi;
 int status = WL_IDLE_STATUS;
 HTTPClient http;
 
 
-uint8_t *Buffer = new uint8_t[50]; //TODO: ADD MEMORY MANAGEMENT
+uint8_t* Buffer = new uint8_t[50]; //TODO: ADD MEMORY MANAGEMENT
 int memoryLength = 50;
 int currentBufferIndex = 0;
 
@@ -23,7 +23,7 @@ void AddCharToBuf(char c) {
         currentBufferIndex++;
     }
     else {
-        uint8_t *newBuffer = new uint8_t[memoryLength + 40];
+        uint8_t* newBuffer = new uint8_t[memoryLength + 40];
         for (int i = 0; i < currentBufferIndex; i++) {
             newBuffer[i] = Buffer[i];
         }
@@ -78,7 +78,7 @@ void TransmitData() {
         }
     }
 
-    if(!http.begin(wifi, url)) { 
+    if (!http.begin(wifi, url)) {
         Serial.println("http connection to server failed, giving up");
         return;
     }
@@ -94,7 +94,7 @@ void TransmitData() {
         Serial.print("response: ");
         Serial.println(response);
         currentBufferIndex = 0;
-    } 
+    }
     else {
         Serial.print("Error on sending POST: ");
         Serial.println(httpResponseCode);
