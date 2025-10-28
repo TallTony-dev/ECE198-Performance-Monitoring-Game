@@ -26,9 +26,11 @@ void addDataToBuf(GameState& game);
  * Sends all buffered game sessions as JSON array via HTTP POST.
  * Clears buffer after successful transmission.
  *
+ * @return true if transmission successful, false if unsuccessful or no data to send
+ *
  * @note Requires active WiFi connection
  */
-void transmitData();
+bool transmitData();
 
 /**
  * @brief Establish WiFi connection

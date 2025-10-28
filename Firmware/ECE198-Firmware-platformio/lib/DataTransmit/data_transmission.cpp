@@ -84,19 +84,20 @@ void addDataToBuf(GameState& game) {
 }
 
 
-void transmitData() {
+bool transmitData() {
+    // Obtain data from buffer with locking
     std::string payload = "";
     {
         std::lock_guard<std::mutex> lock(bufferMutex);
         if (gameDataBuffer.empty()) {
             Serial.println("No data to transmit");
-            return;
+            return false;
         }
 
-        // Get the first
+        // Get the oldest game data
         payload = gameDataBuffer.front();
         gameDataBuffer.pop();
-    }
+    } // Release lock
 
     // Send HTTP POST
     http.begin(wifi, SERVER_URL);
@@ -118,4 +119,5 @@ void transmitData() {
     }
 
     http.end();
+    return true;
 }

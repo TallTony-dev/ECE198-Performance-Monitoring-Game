@@ -94,7 +94,11 @@ void loop() {
  */
 void dataTransmissionLoop(void* parameter) {
     while (true) {
-        transmitData();
+        if (transmitData()) {
+            Serial.println("Data transmission successful");
+            continue;
+        }
+        Serial.println("Data transmission failed");
         delay(1000);  // Wait before next transmission
     }
 }
