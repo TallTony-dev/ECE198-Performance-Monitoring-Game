@@ -10,8 +10,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <vector>
+#include <queue>
+#include <mutex>
 #include <string>
+#include <optional>
 
 WiFiClient wifi;
 int status = WL_IDLE_STATUS;
@@ -19,7 +21,8 @@ HTTPClient http;
 
 // Buffer to store up to 20 game sessions as JSON strings
 constexpr int MAX_GAMES_IN_BUFFER = 20;
-std::vector<std::string> gameDataBuffer;
+std::mutex bufferMutex;
+std::queue<std::string> gameDataBuffer;
 
 bool connectToWifi() {
     WiFi.mode(WIFI_STA);
@@ -68,44 +71,38 @@ void addDataToBuf(GameState& game) {
     serializeJson(doc, jsonString);
 
     // Add to buffer
+    std::lock_guard<std::mutex> lock(bufferMutex);
     if (gameDataBuffer.size() >= MAX_GAMES_IN_BUFFER) {
         // Remove oldest game if buffer full
-        gameDataBuffer.erase(gameDataBuffer.begin());
+        gameDataBuffer.pop();
         Serial.println("Warning: Buffer full, removing oldest game data");
     }
 
-    gameDataBuffer.push_back(jsonString);
+    gameDataBuffer.push(jsonString);
     Serial.print("Game data added to buffer. Buffer size: ");
     Serial.println(gameDataBuffer.size());
 }
 
 
 void transmitData() {
-    if (gameDataBuffer.empty()) {
-        Serial.println("No data to transmit");
-        return;
+    std::string payload = "";
+    {
+        std::lock_guard<std::mutex> lock(bufferMutex);
+        if (gameDataBuffer.empty()) {
+            Serial.println("No data to transmit");
+            return;
+        }
+
+        // Get the first
+        payload = gameDataBuffer.front();
+        gameDataBuffer.pop();
     }
-
-    // Create JSON array containing all game sessions
-    JsonDocument doc;
-    JsonArray gamesArray = doc.to<JsonArray>();
-
-    // Parse each stored JSON string and add to array
-    for (const auto& jsonStr : gameDataBuffer) {
-        JsonDocument gameDoc;
-        deserializeJson(gameDoc, jsonStr);
-        gamesArray.add(gameDoc);
-    }
-
-    // Serialize final payload
-    String payload;
-    serializeJson(doc, payload);
 
     // Send HTTP POST
     http.begin(wifi, SERVER_URL);
     http.addHeader("Content-Type", "application/json");
 
-    int httpResponseCode = http.POST(payload);
+    int httpResponseCode = http.POST(payload.c_str());
 
     if (httpResponseCode > 0) {
         Serial.print("HTTP Response code: ");
@@ -113,9 +110,6 @@ void transmitData() {
         Serial.print("Successfully transmitted ");
         Serial.print(gameDataBuffer.size());
         Serial.println(" game sessions");
-
-        // Clear buffer on success
-        gameDataBuffer.clear();
     }
     else {
         Serial.print("Error sending POST: ");

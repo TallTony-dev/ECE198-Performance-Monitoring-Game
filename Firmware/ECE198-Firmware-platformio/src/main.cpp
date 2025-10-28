@@ -19,6 +19,7 @@
 
  // Forward declarations
 void deepSleep();
+void dataTransmissionLoop();
 
 /**
  * @brief Initialize system hardware and peripherals
@@ -52,6 +53,18 @@ void setup() {
     pinMode(BUTTON_PIN_3, INPUT_PULLUP);
     pinMode(BUTTON_PIN_4, INPUT_PULLUP);
     pinMode(SPEAKER_PIN, OUTPUT);
+
+    Serial.println("Setup complete");
+    delay(500);
+    xTaskCreatePinnedToCore(
+        dataTransmissionLoop,   // Task function
+        "DataTransmission",     // Name of task
+        8192,                   // Stack size
+        NULL,                   // Parameter to pass
+        1,                      // Task priority
+        NULL,                   // Task handle
+        1                       // Run on core 1
+    );
 }
 
 /**
@@ -71,9 +84,19 @@ void loop() {
 
     // Upload performance data to cloud
     addDataToBuf(game);  // Simplified - just pass the game state
-    transmitData();
+}
 
-    // Clean up and enter sleep mode
+/**
+ * @brief Data transmission loop task
+ *
+ * Continuously attempts to transmit buffered data to cloud server.
+ * Runs as a FreeRTOS task.
+ */
+void dataTransmissionLoop(void* parameter) {
+    while (true) {
+        transmitData();
+        delay(1000);  // Wait before next transmission
+    }
 }
 
 /**
