@@ -15,7 +15,7 @@ uint8_t* Buffer = new uint8_t[50]; //TODO: ADD MEMORY MANAGEMENT
 int memoryLength = 50;
 int currentBufferIndex = 0;
 
-void AddCharToBuf(char c) {
+void addCharToBuf(char c) {
     if (currentBufferIndex < memoryLength) {
         Buffer[currentBufferIndex] = c;
         currentBufferIndex++;
@@ -39,15 +39,15 @@ void AddCharToBuf(char c) {
 }
 
 //Delmits data with comma appended to end
-void AddDataToBuf(uint8_t* data, int length) { //length in bytes
+void addDataToBuf(const uint8_t* data, int length) { //length in bytes
     for (int i = 0; i < length; i++) {
-        AddCharToBuf(data[i]);
+        addCharToBuf(data[i]);
     }
-    AddCharToBuf(',');
+    addCharToBuf(',');
 }
 
 //call in initialization, returns true if connected
-bool ConnectToWifi(unsigned long timeoutMs = 2000) {
+bool connectToWifi(unsigned long timeoutMs = 2000) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid /*, pass*/);
 
@@ -69,9 +69,9 @@ bool ConnectToWifi(unsigned long timeoutMs = 2000) {
 
 
 //partly paraphrased from https://stackoverflow.com/questions/3677400/making-a-http-post-request-using-arduino
-void TransmitData() {
+void transmitData() {
     if (WiFi.status() != WL_CONNECTED) {
-        while (!ConnectToWifi()) {
+        while (!connectToWifi()) {
             Serial.println("wifi disconnected, attempting to reconnect");
         }
     }
@@ -100,6 +100,6 @@ void TransmitData() {
     http.end();
 }
 
-void DisconnectWifi() {
+void disconnectWifi() {
     WiFi.disconnect(true);
 }
