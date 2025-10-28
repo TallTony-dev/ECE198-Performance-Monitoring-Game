@@ -1,7 +1,5 @@
 #include <HTTPClient.h>
-#ifndef SPEAKER_PIN
-#include "GPIOStuff.hpp"
-#endif
+#include "user_interaction.hpp"
 #include <string>
 
 char ssid[] = "UniversityOfWaterloo"; //SSID/name
