@@ -1,61 +1,35 @@
-#include <HTTPClient.h>
-#include "user_interaction.hpp"
-#include <string>
+/**
+ * @file data_transmission.cpp
+ * @brief IoT data transmission implementation
+ * @author caTr1xLiu
+ */
 
-char ssid[] = "UniversityOfWaterloo"; //SSID/name
-//char pass[] = "grahwahh"; //password
-char url[] = "http://webhook.site/2128266b-96bc-4ee1-ab6f-751a862ec269"; //url to post to 
+#include "data_transmission.hpp"
+#include "wifi_info.hpp"
+#include "game.hpp"
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <vector>
+#include <string>
 
 WiFiClient wifi;
 int status = WL_IDLE_STATUS;
 HTTPClient http;
 
+// Buffer to store up to 20 game sessions as JSON strings
+constexpr int MAX_GAMES_IN_BUFFER = 20;
+std::vector<std::string> gameDataBuffer;
 
-uint8_t* Buffer = new uint8_t[50]; //TODO: ADD MEMORY MANAGEMENT
-int memoryLength = 50;
-int currentBufferIndex = 0;
-
-void addCharToBuf(char c) {
-    if (currentBufferIndex < memoryLength) {
-        Buffer[currentBufferIndex] = c;
-        currentBufferIndex++;
-    }
-    else {
-        uint8_t* newBuffer = new uint8_t[memoryLength + 40];
-        for (int i = 0; i < currentBufferIndex; i++) {
-            newBuffer[i] = Buffer[i];
-        }
-        if (newBuffer != nullptr) {
-            memoryLength += 40;
-            delete[] Buffer;
-            Buffer = newBuffer;
-            Buffer[currentBufferIndex] = c;
-            currentBufferIndex++;
-        }
-        else {
-            Serial.println("Error: Failed Allocation");
-        }
-    }
-}
-
-//Delmits data with comma appended to end
-void addDataToBuf(const uint8_t* data, int length) { //length in bytes
-    for (int i = 0; i < length; i++) {
-        addCharToBuf(data[i]);
-    }
-    addCharToBuf(',');
-}
-
-//call in initialization, returns true if connected
-bool connectToWifi(unsigned long timeoutMs = 2000) {
+bool connectToWifi() {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid /*, pass*/);
+    WiFi.begin(SSID, PASSWORD);
 
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED) {
-        if (millis() - start > timeoutMs) {
+        if (millis() - start > TIMEOUT_MS) {
             Serial.println("Could not get connection to wifi (timeout)");
-            Serial.println(ssid);
+            Serial.println(SSID);
             Serial.println(WiFi.macAddress());
             return false;
         }
@@ -67,39 +41,87 @@ bool connectToWifi(unsigned long timeoutMs = 2000) {
     return true;
 }
 
+void disconnectWifi() {
+    WiFi.disconnect(true);
+}
 
-//partly paraphrased from https://stackoverflow.com/questions/3677400/making-a-http-post-request-using-arduino
-void transmitData() {
-    if (WiFi.status() != WL_CONNECTED) {
-        while (!connectToWifi()) {
-            Serial.println("wifi disconnected, attempting to reconnect");
-        }
+
+void addDataToBuf(GameState& game) {
+    // Create JSON document for single game
+    JsonDocument doc;
+
+    // Add device identification
+    doc["device_id"] = WiFi.macAddress();
+    doc["timestamp"] = millis();
+
+    // Add game results
+    doc["level_reached"] = game.currentLevel;
+
+    // Add timing array
+    JsonArray timings = doc.createNestedArray("response_times");
+    for (int i = 0; i < game.currentLevel; i++) {
+        timings.add(game.timeSpent[i]);
     }
 
-    if (!http.begin(wifi, url)) {
-        Serial.println("http connection to server failed, giving up");
+    // Serialize to string
+    std::string jsonString;
+    serializeJson(doc, jsonString);
+
+    // Add to buffer
+    if (gameDataBuffer.size() >= MAX_GAMES_IN_BUFFER) {
+        // Remove oldest game if buffer full
+        gameDataBuffer.erase(gameDataBuffer.begin());
+        Serial.println("Warning: Buffer full, removing oldest game data");
+    }
+
+    gameDataBuffer.push_back(jsonString);
+    Serial.print("Game data added to buffer. Buffer size: ");
+    Serial.println(gameDataBuffer.size());
+}
+
+
+void transmitData() {
+    if (gameDataBuffer.empty()) {
+        Serial.println("No data to transmit");
         return;
     }
 
-    http.addHeader("Content-Type", "application/octet-stream");
-    http.addHeader("Connection", "close");
-    http.addHeader("Content-Length", String(currentBufferIndex));
+    // Create JSON array containing all game sessions
+    JsonDocument doc;
+    JsonArray gamesArray = doc.to<JsonArray>();
 
-    int httpResponseCode = http.POST(Buffer, currentBufferIndex);
+    // Parse each stored JSON string and add to array
+    for (const auto& jsonStr : gameDataBuffer) {
+        JsonDocument gameDoc;
+        deserializeJson(gameDoc, jsonStr);
+        gamesArray.add(gameDoc);
+    }
+
+    // Serialize final payload
+    String payload;
+    serializeJson(doc, payload);
+
+    // Send HTTP POST
+    http.begin(wifi, SERVER_URL);
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.POST(payload);
+
     if (httpResponseCode > 0) {
-        String response = http.getString();
+        Serial.print("HTTP Response code: ");
         Serial.println(httpResponseCode);
-        Serial.print("response: ");
-        Serial.println(response);
-        currentBufferIndex = 0;
+        Serial.print("Successfully transmitted ");
+        Serial.print(gameDataBuffer.size());
+        Serial.println(" game sessions");
+
+        // Clear buffer on success
+        gameDataBuffer.clear();
     }
     else {
-        Serial.print("Error on sending POST: ");
+        Serial.print("Error sending POST: ");
         Serial.println(httpResponseCode);
+        Serial.println("Data retained in buffer for retry");
     }
-    http.end();
-}
 
-void disconnectWifi() {
-    WiFi.disconnect(true);
+    http.end();
 }

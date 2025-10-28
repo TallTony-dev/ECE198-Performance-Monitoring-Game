@@ -1,3 +1,13 @@
+/**
+ * @file main.ino
+ * @brief Main entry point for HydroGuard cognitive assessment system
+ *
+ * Manages system initialization, WiFi connectivity, game execution,
+ * data transmission, and power management.
+ *
+ * @author TallTony-dev
+ */
+
 #include <Arduino.h>
 #include "data_transmission.hpp"
 #include "user_interaction.hpp"
@@ -7,7 +17,7 @@
 
 #define SLEEPPIN GPIO_NUM_32  ///< GPIO pin for wake-up from deep sleep
 
-// Forward declarations
+ // Forward declarations
 void deepSleep();
 
 /**
@@ -60,18 +70,10 @@ void loop() {
     }
 
     // Upload performance data to cloud
-    for (int i = 0; i < game.currentLevel; i++) {
-        int time = game.timeSpent[i];
-        addDataToBuf(reinterpret_cast<uint8_t*>(&time), sizeof(time));
-    }
-
-    // Add final level reached
-    addDataToBuf(reinterpret_cast<uint8_t*>(&game.currentLevel), sizeof(int));
-
-    // Transmit data and enter sleep mode
+    addDataToBuf(game);  // Simplified - just pass the game state
     transmitData();
-    disconnectWifi();
-    deepSleep();
+
+    // Clean up and enter sleep mode
 }
 
 /**

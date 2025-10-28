@@ -1,3 +1,9 @@
+/**
+ * @file game.cpp
+ * @brief Implementation of Simon Says memory game logic
+ * @author TallTony-dev catr1xLiu
+ */
+
 #include "game.hpp"
 #include "user_interaction.hpp"
 #include <Arduino.h>
