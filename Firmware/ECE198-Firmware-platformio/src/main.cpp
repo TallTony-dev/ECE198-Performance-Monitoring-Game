@@ -1,30 +1,38 @@
 #include <Arduino.h>
-#include "../lib/DataTransmit/DataTransmit.hpp"
-#include "../lib/GPIOStuff/GPIOStuff.hpp"
-#include <future>
+#include "data_transmission.hpp"
+#include "user_interaction.hpp"
+#include "game.hpp"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#define SLEEPPIN GPIO_NUM_32
+#define SLEEPPIN GPIO_NUM_32  ///< GPIO pin for wake-up from deep sleep
 
-// put function declarations here:
-void PowerOff(); //wake up when a game on button is pressed
-void DeepSleep(); //wake up when a game start is pressed
+// Forward declarations
+void deepSleep();
 
+/**
+ * @brief Initialize system hardware and peripherals
+ *
+ * Configures serial, WiFi, GPIO pins, and audio output.
+ * Blocks until WiFi connection established.
+ */
 void setup() {
-    // put your setup code here, to run once:
     Serial.begin(9600);
 
+    // Configure speaker PWM
     ledcSetup(0, 2000, 8);
-    ledcAttachPin(SPEAKER_PIN, 1); //maybe???
+    ledcAttachPin(SPEAKER_PIN, 1);
 
-    while (!ConnectToWifi())
+    // Connect to WiFi
+    while (!connectToWifi()) {
         Serial.println("Connecting to wifi...");
+    }
 
-
+    // Configure status LED
     pinMode(BUILTIN_LED, OUTPUT);
     digitalWrite(BUILTIN_LED, HIGH);
 
+    // Configure game interface pins
     pinMode(LED_PIN_1, OUTPUT);
     pinMode(LED_PIN_2, OUTPUT);
     pinMode(LED_PIN_3, OUTPUT);
@@ -34,86 +42,49 @@ void setup() {
     pinMode(BUTTON_PIN_3, INPUT_PULLUP);
     pinMode(BUTTON_PIN_4, INPUT_PULLUP);
     pinMode(SPEAKER_PIN, OUTPUT);
-
 }
 
-int currentLevel = 1;
-static int times[MAX_LEVEL];
-static int sequence[MAX_LEVEL];
-
+/**
+ * @brief Main game loop
+ *
+ * Runs cognitive assessment game, transmits results to cloud,
+ * then enters deep sleep mode.
+ */
 void loop() {
-    // put your main code here, to run repeatedly:
-    int rand = random(1, 5); //random between 1 and 4 inclusive
-    sequence[currentLevel - 1] = rand;
+    GameState game;
+    initGame(game);
 
-    //output the sequence here
-    for (int i = 0; i < currentLevel; i++) {
-        if (sequence[i] == 1) {
-            Output(LED_PIN_1, TONE_1, 1000);
-        }
-        else if (sequence[i] == 2) {
-            Output(LED_PIN_2, TONE_2, 1000);
-        }
-        else if (sequence[i] == 3) {
-            Output(LED_PIN_3, TONE_3, 1000);
-        }
-        else {
-            Output(LED_PIN_4, TONE_4, 1000);
-        }
-        if (i != currentLevel - 1)
-            delay(100);
+    // Play game until completion or failure
+    while (playRound(game)) {
+        // Continue playing rounds
     }
 
-    timeval startTime;
-    gettimeofday(&startTime, NULL);
-
-    //get user inputs
-    bool isCorrect = true;
-    for (int i = 0; i < currentLevel; i++) {
-        bool inputRecieved = false;
-        int answer = 0;
-        while (!(answer = CheckInputs())) {}
-        if (answer != sequence[i]) {
-            IncorrectAnswer();
-            isCorrect = false;
-            break;
-        }
-
+    // Upload performance data to cloud
+    for (int i = 0; i < game.currentLevel; i++) {
+        int time = game.timeSpent[i];
+        addDataToBuf(reinterpret_cast<uint8_t*>(&time), sizeof(time));
     }
 
-    timeval endTime;
-    gettimeofday(&endTime, NULL);
-    int deltaTime = endTime.tv_sec - startTime.tv_sec;
+    // Add final level reached
+    addDataToBuf(reinterpret_cast<uint8_t*>(&game.currentLevel), sizeof(int));
 
-    times[currentLevel - 1] = deltaTime;
-
-    if (isCorrect && currentLevel < MAX_LEVEL) {
-        currentLevel++;
-        delay(1000);
-    }
-    else {
-
-        // upload data here
-        for (int i = 0; i < currentLevel; i++) { //send times per level in secs
-            AddDataToBuf((uint8_t*)&(times[i]), sizeof(times[i]));
-        }
-        AddDataToBuf((uint8_t*)&currentLevel, sizeof(int));
-        TransmitData(); //time1, time2,... level player in on,
-
-        currentLevel = 1;
-        DisconnectWifi();
-        DeepSleep();
-    }
-
+    // Transmit data and enter sleep mode
+    transmitData();
+    disconnectWifi();
+    deepSleep();
 }
 
-void DeepSleep() {
-    //wake up when game start high signal on pin4
+/**
+ * @brief Enter deep sleep with button wake-up
+ *
+ * Configures ESP32 to wake when SLEEPPIN goes LOW.
+ * System restarts from setup() on wake.
+ */
+void deepSleep() {
     Serial.println("Sleeping...");
-    esp_sleep_enable_ext0_wakeup(SLEEPPIN, 0); //1 high 0 low
 
+    esp_sleep_enable_ext0_wakeup(SLEEPPIN, 0); // Wake on LOW
     pinMode(SLEEPPIN, INPUT_PULLUP);
-
     gpio_deep_sleep_hold_en();
 
     Serial.flush();
