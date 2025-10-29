@@ -84,6 +84,8 @@ void loop() {
 
     // Upload performance data to cloud
     addDataToBuf(game);  // Simplified - just pass the game state
+    transmitData();
+    deepSleep();
 }
 
 /**
