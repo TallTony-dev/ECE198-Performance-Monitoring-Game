@@ -7,7 +7,7 @@ from datetime import datetime
 # Store received data
 received_data = []
 
-@app.post('/device/')
+@app.post('/device')
 def device_webhook(data: dict):
     # Handle the actual format from ESP32
     device_id = data.get("device_id", "Unknown")

@@ -15,7 +15,7 @@
 #include <string>
 #include <optional>
 
-WiFiClient wifi;
+WiFiClientSecure wifi;
 int status = WL_IDLE_STATUS;
 HTTPClient http;
 
@@ -41,6 +41,8 @@ bool connectToWifi() {
     Serial.println("Connected to wifi");
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
+
+    wifi.setInsecure();
     return true;
 }
 
@@ -61,7 +63,7 @@ void addDataToBuf(GameState& game) {
     doc["level_reached"] = game.currentLevel;
 
     // Add timing array
-    JsonArray timings = doc.createNestedArray("response_times");
+    JsonArray timings = doc["response_times"].to<JsonArray>();
     for (int i = 0; i < game.currentLevel; i++) {
         timings.add(game.timeSpent[i]);
     }
@@ -69,6 +71,8 @@ void addDataToBuf(GameState& game) {
     // Serialize to string
     std::string jsonString;
     serializeJson(doc, jsonString);
+    Serial.print("Serialized game data: ");
+    Serial.println(jsonString.c_str());
 
     // Add to buffer
     std::lock_guard<std::mutex> lock(bufferMutex);
@@ -102,10 +106,11 @@ bool transmitData() {
     // Send HTTP POST
     http.begin(wifi, SERVER_URL);
     http.addHeader("Content-Type", "application/json");
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
     int httpResponseCode = http.POST(payload.c_str());
 
-    if (httpResponseCode > 0) {
+    if (httpResponseCode >= 200 && httpResponseCode < 300) {
         Serial.print("HTTP Response code: ");
         Serial.println(httpResponseCode);
         Serial.print("Successfully transmitted ");
@@ -115,6 +120,10 @@ bool transmitData() {
     else {
         Serial.print("Error sending POST: ");
         Serial.println(httpResponseCode);
+        Serial.print("Response: ");
+        Serial.println(http.getString());
+        std::lock_guard<std::mutex> lock(bufferMutex);
+        gameDataBuffer.push(payload); // Re-add data to buffer for retry
         Serial.println("Data retained in buffer for retry");
     }
 
