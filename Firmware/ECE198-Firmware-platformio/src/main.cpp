@@ -19,7 +19,7 @@
 
  // Forward declarations
 void deepSleep();
-void dataTransmissionLoop();
+void dataTransmissionLoop(void* parameter);
 
 /**
  * @brief Initialize system hardware and peripherals

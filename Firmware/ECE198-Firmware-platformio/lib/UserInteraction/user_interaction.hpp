@@ -18,8 +18,6 @@
 #define TONE_3 2000         ///< Button 3 tone
 #define TONE_4 2400         ///< Button 4 tone
 
-// Game Configuration
-#define MAX_LEVEL 20        ///< Maximum game difficulty level (TODO: move to game.hpp)
 
 // Input Debouncing
 #define DEBOUNCE_MS 20L     ///< Debounce delay in milliseconds

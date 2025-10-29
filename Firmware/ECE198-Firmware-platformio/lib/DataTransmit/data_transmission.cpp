@@ -26,13 +26,13 @@ std::queue<std::string> gameDataBuffer;
 
 bool connectToWifi() {
     WiFi.mode(WIFI_STA);
-    WiFi.begin(SSID, PASSWORD);
+    WiFi.begin(MYSSID, PASSWORD);
 
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED) {
         if (millis() - start > TIMEOUT_MS) {
             Serial.println("Could not get connection to wifi (timeout)");
-            Serial.println(SSID);
+            Serial.println(MYSSID);
             Serial.println(WiFi.macAddress());
             return false;
         }

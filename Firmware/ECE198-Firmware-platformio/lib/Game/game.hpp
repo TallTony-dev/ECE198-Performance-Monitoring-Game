@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#define MAX_LEVEL 10
+#define MAX_LEVEL 30
 
 /**
  * @brief Game state data structure
