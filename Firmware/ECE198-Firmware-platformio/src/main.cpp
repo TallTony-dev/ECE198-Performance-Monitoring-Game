@@ -19,7 +19,7 @@
 
  // Forward declarations
 void deepSleep();
-void dataTransmissionLoop();
+void dataTransmissionLoop(void* parameter);
 
 /**
  * @brief Initialize system hardware and peripherals
@@ -84,6 +84,8 @@ void loop() {
 
     // Upload performance data to cloud
     addDataToBuf(game);  // Simplified - just pass the game state
+    transmitData();
+    deepSleep();
 }
 
 /**

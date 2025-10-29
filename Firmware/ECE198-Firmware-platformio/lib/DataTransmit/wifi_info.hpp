@@ -1,6 +1,6 @@
 #pragma once
 
-#define SSID "UniversityOfWaterloo"
+#define MYSSID "UniversityOfWaterloo"
 
 #define PASSWORD ""  // No password for open network
 
