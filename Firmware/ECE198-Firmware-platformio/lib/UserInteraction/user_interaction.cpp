@@ -19,37 +19,31 @@ int checkInputs() {
     return 0;
 }
 
-bool checkButtonInput(const int buttonPin, const int ledPin, const int tone)
+bool checkButtonInput(const int buttonPin, const int LEDPin, const int freq)
 {
-    if (digitalRead(buttonPin) == LOW) {
-        delay(DEBOUNCE_MS);
-        if (digitalRead(buttonPin) == LOW) {
-            output(ledPin, tone, 200);
-            return true;
-        }
+    bool result = false;
+    if (digitalRead(buttonPin) == HIGH) {
+        return false;
     }
-    return false;
-}
 
-//could use DAC onboard if sound doesnt suffice
-void playSound(int freq, int durationMS) {
-    noTone(SPEAKER_PIN);
+    digitalWrite(LEDPin, HIGH);
     tone(SPEAKER_PIN, freq);
-    delay(durationMS);
+    result = false;
+    delay(DEBOUNCE_MS);
+    while (digitalRead(buttonPin) == LOW) {
+        delay(DEBOUNCE_MS);
+        result = true;
+    }
     noTone(SPEAKER_PIN);
+    digitalWrite(LEDPin, LOW);
+    return result;
 }
 
-void blinkLED(int pin, int durationMS) {
-    digitalWrite(pin, HIGH);
-    delay(durationMS);
-    digitalWrite(pin, LOW);
-}
-
-void output(int LEDPin, int freq, int durationMS) {
+void output(int LEDPin, int freq) {
     noTone(SPEAKER_PIN);
     digitalWrite(LEDPin, HIGH);
     tone(SPEAKER_PIN, freq);
-    delay(durationMS);
+    delay(LIGHTUP_MS);
     noTone(SPEAKER_PIN);
     digitalWrite(LEDPin, LOW);
 }

@@ -28,16 +28,19 @@ void dataTransmissionLoop(void* parameter);
  * Blocks until WiFi connection established.
  */
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
+
+    delay(2000);
+    Serial.println("Setup running...");
 
     // Configure speaker PWM
     ledcSetup(0, 2000, 8);
     ledcAttachPin(SPEAKER_PIN, 1);
 
     // Connect to WiFi
-    while (!connectToWifi()) {
-        Serial.println("Connecting to wifi...");
-    }
+    do {
+        Serial.print("Connecting to wifi...");
+    } while (!connectToWifi());
 
     // Configure status LED
     pinMode(BUILTIN_LED, OUTPUT);
@@ -80,12 +83,16 @@ void loop() {
     // Play game until completion or failure
     while (playRound(game)) {
         // Continue playing rounds
+        Serial.println("Level completed! Advancing to next level...");
     }
+
+    Serial.println("Game over!");
+    Serial.print("Levels completed: ");
+    Serial.println(game.currentLevel);
 
     // Upload performance data to cloud
     addDataToBuf(game);  // Simplified - just pass the game state
-    transmitData();
-    deepSleep();
+    // deepSleep();
 }
 
 /**
@@ -97,10 +104,8 @@ void loop() {
 void dataTransmissionLoop(void* parameter) {
     while (true) {
         if (transmitData()) {
-            Serial.println("Data transmission successful");
             continue;
         }
-        Serial.println("Data transmission failed");
         delay(1000);  // Wait before next transmission
     }
 }

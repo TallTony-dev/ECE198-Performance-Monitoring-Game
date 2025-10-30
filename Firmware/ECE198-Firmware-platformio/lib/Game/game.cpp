@@ -18,16 +18,16 @@ void initGame(GameState& state) {
 void displaySequence(const GameState& state) {
     for (int i = 0; i < state.currentLevel; i++) {
         if (state.colorSequence[i] == 1) {
-            output(LED_PIN_1, TONE_1, 1000);
+            output(LED_PIN_1, TONE_1);
         }
         else if (state.colorSequence[i] == 2) {
-            output(LED_PIN_2, TONE_2, 1000);
+            output(LED_PIN_2, TONE_2);
         }
         else if (state.colorSequence[i] == 3) {
-            output(LED_PIN_3, TONE_3, 1000);
+            output(LED_PIN_3, TONE_3);
         }
         else if (state.colorSequence[i] == 4) {
-            output(LED_PIN_4, TONE_4, 1000);
+            output(LED_PIN_4, TONE_4);
         }
 
         // Add gap between elements (except after last element)
