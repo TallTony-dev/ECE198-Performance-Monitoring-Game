@@ -1,1 +1,3 @@
-Stuff
+<H1>Hey! 👋 </H1>
+<H3>What is this?</H3>
+This is the repository for our ECE198 class at UWaterloo, where [catr1xLiu](https://github.com/catr1xLiu) (Yiran), me, Eric, and Jimin are working to develop our project to create a product that would combat hospital induced delirium. We're developing a 'Simon Says'-like game which will submit play data to a server to look for any anomalies in data which may indicate an onset in HID and prompt a nurse to check in on the patient. Of course, the game would also serve as entertainment and a bit of mental stimulation for the patient, excersizing their memory. Firmware is written for PlatformIO using Arduino framework for an ESP32, and Web server is built with NiceGUI, a python based UI framework served with FastAPI.
