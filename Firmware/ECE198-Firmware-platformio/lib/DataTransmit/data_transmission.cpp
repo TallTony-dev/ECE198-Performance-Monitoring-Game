@@ -30,13 +30,22 @@ bool connectToWifi() {
 
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED) {
+        Serial.print(".");
         if (millis() - start > TIMEOUT_MS) {
             Serial.println("Could not get connection to wifi (timeout)");
             Serial.println(MYSSID);
             Serial.println(WiFi.macAddress());
             return false;
         }
-        delay(200);
+        delay(400);
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
+
+    for (int i = 0; i < 5; i++) {
+        digitalWrite(LED_BUILTIN, LOW);
+        delay(100);
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(100);
     }
     Serial.println("Connected to wifi");
     Serial.print("IP: ");
@@ -94,7 +103,6 @@ bool transmitData() {
     {
         std::lock_guard<std::mutex> lock(bufferMutex);
         if (gameDataBuffer.empty()) {
-            Serial.println("No data to transmit");
             return false;
         }
 
@@ -116,6 +124,7 @@ bool transmitData() {
         Serial.print("Successfully transmitted ");
         Serial.print(gameDataBuffer.size());
         Serial.println(" game sessions");
+        http.end();
     }
     else {
         Serial.print("Error sending POST: ");
