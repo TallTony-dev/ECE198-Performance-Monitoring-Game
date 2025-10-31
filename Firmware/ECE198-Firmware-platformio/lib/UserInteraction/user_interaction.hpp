@@ -26,15 +26,15 @@
 #if BOARD_ID == 'A' // Yiran's prototype board
 #define SPEAKER_PIN     4
 
-#define LED_PIN_1       32 
-#define LED_PIN_2       33
-#define LED_PIN_3       25
-#define LED_PIN_4       26
+#define LED_PIN_1       GPIO_NUM_32
+#define LED_PIN_2       GPIO_NUM_33
+#define LED_PIN_3       GPIO_NUM_25
+#define LED_PIN_4       GPIO_NUM_26
 
-#define BUTTON_PIN_1    27 
-#define BUTTON_PIN_2    14 
-#define BUTTON_PIN_3    12  
-#define BUTTON_PIN_4    13
+#define BUTTON_PIN_1    GPIO_NUM_27
+#define BUTTON_PIN_2    GPIO_NUM_14
+#define BUTTON_PIN_3    GPIO_NUM_12
+#define BUTTON_PIN_4    GPIO_NUM_13
 #endif
 
 #if BOARD_ID == 'B' // Tony's prototype board
@@ -95,3 +95,10 @@ int checkInputs();
  * Activates all LEDs and plays error tone for 2 seconds
  */
 void incorrectAnswer();
+
+/**
+ * @brief Shines LED and waits for the first user input
+ *
+ * @return true when a button is pressed to start the game
+ */
+bool waitForGameStart();

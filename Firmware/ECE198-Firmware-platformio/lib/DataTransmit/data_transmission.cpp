@@ -129,8 +129,6 @@ bool transmitData() {
     else {
         Serial.print("Error sending POST: ");
         Serial.println(httpResponseCode);
-        Serial.print("Response: ");
-        Serial.println(http.getString());
         std::lock_guard<std::mutex> lock(bufferMutex);
         gameDataBuffer.push(payload); // Re-add data to buffer for retry
         Serial.println("Data retained in buffer for retry");
