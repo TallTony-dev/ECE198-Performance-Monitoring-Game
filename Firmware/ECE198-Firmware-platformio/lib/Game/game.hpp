@@ -5,6 +5,8 @@
 
 #define MAX_LEVEL 30
 
+#define TIMEOUT_SECONDS 15
+
 /**
  * @brief Game state data structure
  *
@@ -13,7 +15,7 @@
  */
 struct GameState {
     int currentLevel;                         ///< Current difficulty level (1-MAX_LEVEL)
-    std::array<int, MAX_LEVEL> timeSpent;        ///< Response times per level (seconds)
+    std::array<double, MAX_LEVEL> timeSpent;        ///< Response times per level (seconds)
     std::array<int, MAX_LEVEL> colorSequence;     ///< Button sequence to memorize (1-4)
 };
 
@@ -58,7 +60,7 @@ void initGame(GameState& state);
  * }
  * @endcode
  */
-bool playRound(GameState& state);
+bool playRound(GameState& state, bool& endedDueToNoResponse);
 
 /**
  * @brief Display the current sequence to the patient
@@ -86,7 +88,7 @@ void displaySequence(const GameState& state);
  * @note Blocking function - waits for all inputs
  * @warning Does not timeout - will wait indefinitely for input
  */
-bool getPlayerInput(const GameState& state, int& deltaTimeSeconds);
+bool getPlayerInput(const GameState& state, double& deltaTimeSeconds, bool& noResponse);
 
 /**
  * @brief Reset game to initial state

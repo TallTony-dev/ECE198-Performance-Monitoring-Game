@@ -37,39 +37,38 @@ void displaySequence(const GameState& state) {
     }
 }
 
-bool getPlayerInput(const GameState& state, int& deltaTimeSeconds) {
-    timeval startTime;
-    gettimeofday(&startTime, NULL);
+bool getPlayerInput(const GameState& state, double& deltaTimeSeconds, bool& noResponse) {
+    long startTime = millis(), lastInputTime = startTime;
+    bool isCorrect = true;
+    noResponse = false;
 
     // Get user inputs and validate
     for (int i = 0; i < state.currentLevel; i++) {
         int answer = 0;
 
         // Wait for button press
-        while (!(answer = checkInputs())) {}
+        while (!(answer = checkInputs())) {
+            if (millis() - lastInputTime > TIMEOUT_SECONDS * 1000) {
+                noResponse = true;
+                break;
+            }
+        }
 
         // Check if answer is correct
-        if (answer != state.colorSequence[i]) {
+        if (answer != state.colorSequence[i] || noResponse) {
             incorrectAnswer();
-
-            // Calculate time even on failure
-            timeval endTime;
-            gettimeofday(&endTime, NULL);
-            deltaTimeSeconds = endTime.tv_sec - startTime.tv_sec;
-
-            return false;
+            isCorrect = false;
+            break;
         }
     }
 
     // Calculate completion time
-    timeval endTime;
-    gettimeofday(&endTime, NULL);
-    deltaTimeSeconds = endTime.tv_sec - startTime.tv_sec;
+    deltaTimeSeconds = (millis() - startTime) / 1000.0;
 
-    return true;
+    return isCorrect;
 }
 
-bool playRound(GameState& state) {
+bool playRound(GameState& state, bool& endedDueToNoResponse) {
     // Generate next element in sequence
     int randomButton = random(1, 5); // Random between 1 and 4 inclusive
     state.colorSequence[state.currentLevel - 1] = randomButton;
@@ -78,8 +77,8 @@ bool playRound(GameState& state) {
     displaySequence(state);
 
     // Get and validate player input
-    int deltaTime = 0;
-    bool isCorrect = getPlayerInput(state, deltaTime);
+    double deltaTime = 0.0;
+    bool isCorrect = getPlayerInput(state, deltaTime, endedDueToNoResponse);
 
     // Store timing data
     state.timeSpent[state.currentLevel - 1] = deltaTime;

@@ -26,7 +26,7 @@ bool checkButtonInput(const int buttonPin, const int LEDPin, const int freq)
         return false;
     }
 
-    digitalWrite(LEDPin, HIGH);
+    analogWrite(LEDPin, 255);
     tone(SPEAKER_PIN, freq);
     result = false;
     delay(DEBOUNCE_MS);
@@ -35,33 +35,33 @@ bool checkButtonInput(const int buttonPin, const int LEDPin, const int freq)
         result = true;
     }
     noTone(SPEAKER_PIN);
-    digitalWrite(LEDPin, LOW);
+    analogWrite(LEDPin, 0);
     return result;
 }
 
 void output(int LEDPin, int freq) {
     noTone(SPEAKER_PIN);
-    digitalWrite(LEDPin, HIGH);
+    analogWrite(LEDPin, 255);
     tone(SPEAKER_PIN, freq);
     delay(LIGHTUP_MS);
     noTone(SPEAKER_PIN);
-    digitalWrite(LEDPin, LOW);
+    analogWrite(LEDPin, 0);
 }
 
 void incorrectAnswer() {
     //make sounds and turn on and blink lights
     noTone(SPEAKER_PIN);
-    digitalWrite(LED_PIN_1, HIGH);
-    digitalWrite(LED_PIN_2, HIGH);
-    digitalWrite(LED_PIN_3, HIGH);
-    digitalWrite(LED_PIN_4, HIGH);
+    analogWrite(LED_PIN_1, 255);
+    analogWrite(LED_PIN_2, 255);
+    analogWrite(LED_PIN_3, 255);
+    analogWrite(LED_PIN_4, 255);
     tone(SPEAKER_PIN, ERROR_TONE);
     delay(2000);
     noTone(SPEAKER_PIN);
-    digitalWrite(LED_PIN_1, LOW);
-    digitalWrite(LED_PIN_2, LOW);
-    digitalWrite(LED_PIN_3, LOW);
-    digitalWrite(LED_PIN_4, LOW);
+    analogWrite(LED_PIN_1, 0);
+    analogWrite(LED_PIN_2, 0);
+    analogWrite(LED_PIN_3, 0);
+    analogWrite(LED_PIN_4, 0);
 
     //maybe play a little tune here too for fun
 }

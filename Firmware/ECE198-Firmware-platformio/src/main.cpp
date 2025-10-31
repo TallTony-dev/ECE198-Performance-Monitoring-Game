@@ -68,6 +68,8 @@ void setup() {
         NULL,                   // Task handle
         1                       // Run on core 1
     );
+
+    setCpuFrequencyMhz(80); // Reduce CPU frequency to save power
 }
 
 /**
@@ -81,7 +83,8 @@ void loop() {
     initGame(game);
 
     // Play game until completion or failure
-    while (playRound(game)) {
+    bool endedDueToNoResponse = false;
+    while (playRound(game, endedDueToNoResponse)) {
         // Continue playing rounds
         Serial.println("Level completed! Advancing to next level...");
     }
@@ -89,10 +92,14 @@ void loop() {
     Serial.println("Game over!");
     Serial.print("Levels completed: ");
     Serial.println(game.currentLevel);
+    addDataToBuf(game);  // Pass the game state to buffer
 
-    // Upload performance data to cloud
-    addDataToBuf(game);  // Simplified - just pass the game state
-    // deepSleep();
+    if (endedDueToNoResponse) {
+        Serial.println("Game over due to no response!");
+        // Move to deep sleep after 5 seconds (leave time for any final transmissions)
+        delay(5000);
+        deepSleep();
+    }
 }
 
 /**
