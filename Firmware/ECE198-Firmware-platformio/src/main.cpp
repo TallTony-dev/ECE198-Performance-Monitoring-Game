@@ -82,6 +82,13 @@ void loop() {
     GameState game;
     initGame(game);
 
+    if (!waitForGameStart()) {
+        Serial.println("Game not started due to no user input.");
+        deepSleep();
+    }
+
+    Serial.println("Game started!");
+
     // Play game until completion or failure
     bool endedDueToNoResponse = false;
     while (playRound(game, endedDueToNoResponse)) {

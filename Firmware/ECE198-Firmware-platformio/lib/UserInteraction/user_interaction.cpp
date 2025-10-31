@@ -65,3 +65,40 @@ void incorrectAnswer() {
 
     //maybe play a little tune here too for fun
 }
+
+bool waitForGameStart() {
+    // Make the four leds to phase in a wave until a button is pressed
+    // Use analogWrite for brightness control if possible
+    long startTime = millis();
+    const int waveDuration = 1500; // Duration of one full wave cycle in milliseconds
+    while (millis() - startTime < 30000) { // Wait for up to 30 seconds
+        double t = ((millis() - startTime) % waveDuration) / (double)waveDuration;
+        int brightness1 = sin(t * 2 * PI) * 255;
+        t += 0.25;
+        int brightness2 = sin(t * 2 * PI) * 255;
+        t += 0.25;
+        int brightness3 = sin(t * 2 * PI) * 255;
+        t += 0.25;
+        int brightness4 = sin(t * 2 * PI) * 255;
+        analogWrite(LED_PIN_1, brightness1);
+        analogWrite(LED_PIN_2, brightness2);
+        analogWrite(LED_PIN_3, brightness3);
+        analogWrite(LED_PIN_4, brightness4);
+        delay(20);
+
+        if (digitalRead(BUTTON_PIN_1) == LOW ||
+            digitalRead(BUTTON_PIN_2) == LOW ||
+            digitalRead(BUTTON_PIN_3) == LOW ||
+            digitalRead(BUTTON_PIN_4) == LOW) {
+            // Turn off all LEDs
+            analogWrite(LED_PIN_1, 0);
+            analogWrite(LED_PIN_2, 0);
+            analogWrite(LED_PIN_3, 0);
+            analogWrite(LED_PIN_4, 0);
+
+            delay(200);
+            return true; // Button pressed, exit function
+        }
+    }
+    return false; // No button pressed
+}
