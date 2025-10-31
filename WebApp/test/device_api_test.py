@@ -56,8 +56,8 @@ try:
         response = requests.post(url, json=data, timeout=10)
         
         # Print results
-        print(f"✅ Status Code: {response.status_code}")
-        print(f"✅ Response: {response.json()}")
+        print(f"Status Code: {response.status_code}")
+        print(f"Response: {response.json()}")
         
         if response.status_code == 200:
             print("\nSuccess! Check the webpage to see your data.")
