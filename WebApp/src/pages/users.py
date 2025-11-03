@@ -1,9 +1,9 @@
 from nicegui import ui
-from app.data_webhook import game_plays
+from services.data_webhook import game_plays
 
 
-def home_page():
-    ui.label("Device Webhook Receiver").classes("text-h4")
+def users_list():
+    ui.label("Users").classes("text-h1")
     ui.label("POST to /device/ to submit data").classes("text-subtitle1")
     ui.separator()
 

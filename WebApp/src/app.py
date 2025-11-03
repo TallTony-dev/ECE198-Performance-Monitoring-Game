@@ -1,12 +1,13 @@
 from nicegui import ui, app
-from app.pages import home_page  # Ensure pages are registered
-from app.data_webhook import handle_device_webhook
+
+from pages.users import users_list
+from services.data_webhook import handle_device_webhook
 
 
 def register_routes() -> None:
-    @ui.page("/")
-    def index():
-        home_page()
+    @ui.page("/", title="Home")
+    def home():
+        users_list()
 
     @app.post("/device")
     def device_webhook(data: dict):

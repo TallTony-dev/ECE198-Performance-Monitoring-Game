@@ -1,13 +1,14 @@
-from datetime import datetime, time
+from datetime import datetime
 from rich.table import Table
 from rich import print
-from app.models import User, GamePlay
+from models.user import User
+from models.gameplay import GamePlay
 
 USERS = [
     User(id=1, name="Yiran", device_id="78:1C:3C:2B:96:A4"),
     User(id=2, name="Tony", device_id="AA:BB:CC:DD:EE:FF"),
     User(id=3, name="Eric", device_id="AA:BB:CC:11:22:33"),
-    User(id=4, name="Lee", device_id="11:22:33:44:55:66"),
+    User(id=4, name="Jimin", device_id="11:22:33:44:55:66"),
 ]
 
 game_plays: dict[User, list[GamePlay]] = {}
