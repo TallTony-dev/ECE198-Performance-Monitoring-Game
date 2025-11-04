@@ -5,10 +5,51 @@ from models.user import User
 from models.gameplay import GamePlay
 
 USERS = [
-    User(id=1, name="Yiran", device_id="78:1C:3C:2B:96:A4"),
-    User(id=2, name="Tony", device_id="AA:BB:CC:DD:EE:FF"),
-    User(id=3, name="Eric", device_id="AA:BB:CC:11:22:33"),
-    User(id=4, name="Jimin", device_id="11:22:33:44:55:66"),
+    User(
+        id=1,
+        name="Yiran",
+        device_id="78:1C:3C:2B:96:A4",
+        icon_file="user_icon_1.png",
+    ),
+    User(
+        id=2,
+        name="Tony ",
+        device_id="AA:BB:CC:DD:EE:FF",
+        icon_file="user_icon_2.png",
+    ),
+    User(
+        id=3, name="Eric ", device_id="AA:BB:CC:11:22:33", icon_file="user_icon_3.png"
+    ),
+    User(
+        id=4,
+        name="Jimin",
+        device_id="11:22:33:44:55:66",
+        icon_file="user_icon_0.png",
+    ),
+    User(
+        id=5,
+        name="Tom",
+        device_id="11:22:33:44:55:66",
+        icon_file="user_icon_default.png",
+    ),
+    User(
+        id=6,
+        name="Bob",
+        device_id="11:22:33:44:55:66",
+        icon_file="user_icon_default.png",
+    ),
+    User(
+        id=7,
+        name="John",
+        device_id="11:22:33:44:55:66",
+        icon_file="user_icon_default.png",
+    ),
+    User(
+        id=8,
+        name="Chris",
+        device_id="11:22:33:44:55:66",
+        icon_file="user_icon_default.png",
+    ),
 ]
 
 game_plays: dict[User, list[GamePlay]] = {}
