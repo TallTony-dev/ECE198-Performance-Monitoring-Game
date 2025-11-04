@@ -19,10 +19,10 @@ for user in USERS:
 
 def handle_device_webhook(data: dict):
     # Handle the actual format from ESP32
-    device_id = data.get("device_id", "Unknown")
-    timestamp = data.get("timestamp", 0)
-    level_reached = data.get("level_reached", 0)
-    response_times = data.get("response_times", [])
+    device_id: str = data.get("device_id", "Unknown")
+    timestamp: int = data.get("timestamp", 0)
+    level_reached: int = data.get("level_reached", 0)
+    response_times: list[float] = data.get("response_times", [])
 
     # Print to console
     table = Table(title="Device Data")

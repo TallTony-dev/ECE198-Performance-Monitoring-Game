@@ -16,4 +16,5 @@ def register_routes() -> None:
 
 if __name__ in {"__main__", "__mp_main__"}:
     register_routes()
+    app.add_static_files("/static", "./static")
     ui.run(host="0.0.0.0", port=8000, reload=True)
