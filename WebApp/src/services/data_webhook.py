@@ -54,6 +54,8 @@ USERS = [
 
 game_plays: dict[User, list[GamePlay]] = {}
 
+raw_datas: list[dict[str, object]] = list()
+
 for user in USERS:
     game_plays[user] = []
 
@@ -89,5 +91,13 @@ def handle_device_webhook(data: dict):
         print(
             f"[bold red]Unknown device ID: {device_id}[/bold red], could not record gameplay."
         )
+
+    # Record the raw data of each record
+    for key in data:
+        data[key] = str(data[key])
+    data['user'] = user.name if user else "Unknown"
+    data['time'] = datetime.now().isoformat()
+    raw_datas.append(data)
+    print(data)
 
     return {"status": "success"}

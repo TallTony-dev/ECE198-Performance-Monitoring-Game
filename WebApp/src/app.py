@@ -1,6 +1,7 @@
 from nicegui import ui, app
 
 from src.pages.users import users_list
+from src.pages.raw_data import raw_data_records_page
 from src.services.data_webhook import handle_device_webhook
 
 
@@ -8,6 +9,10 @@ def register_routes() -> None:
     @ui.page("/", title="Home")
     def home():
         users_list()
+
+    @ui.page("/raw", title="Raw Data Records")
+    def raw_data_records():
+        raw_data_records_page()
 
     @app.post("/device")
     def device_webhook(data: dict):
