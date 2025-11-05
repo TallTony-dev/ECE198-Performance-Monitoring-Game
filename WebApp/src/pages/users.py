@@ -1,7 +1,7 @@
 from nicegui import ui
-from services.data_webhook import game_plays
-from models.user import User
-from models.gameplay import GamePlay
+from src.services.data_webhook import game_plays
+from src.models.user import User
+from src.models.gameplay import GamePlay
 
 
 def users_list():

@@ -1,8 +1,8 @@
 from datetime import datetime
 from rich.table import Table
 from rich import print
-from models.user import User
-from models.gameplay import GamePlay
+from src.models.user import User
+from src.models.gameplay import GamePlay
 
 USERS = [
     User(

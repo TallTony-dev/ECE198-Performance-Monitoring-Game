@@ -1,7 +1,7 @@
 from nicegui import ui, app
 
-from pages.users import users_list
-from services.data_webhook import handle_device_webhook
+from src.pages.users import users_list
+from src.services.data_webhook import handle_device_webhook
 
 
 def register_routes() -> None:
@@ -16,5 +16,5 @@ def register_routes() -> None:
 
 if __name__ in {"__main__", "__mp_main__"}:
     register_routes()
-    app.add_static_files("/static", "./static")
+    app.add_static_files("/static", "../static")
     ui.run(host="0.0.0.0", port=8000, reload=True)
