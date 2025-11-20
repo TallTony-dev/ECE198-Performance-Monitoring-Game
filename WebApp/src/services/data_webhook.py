@@ -96,7 +96,7 @@ def handle_device_webhook(data: dict):
     for key in data:
         data[key] = str(data[key])
     data['user'] = user.name if user else "Unknown"
-    data['time'] = datetime.now().isoformat()
+    data['time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     raw_datas.append(data)
     print(data)
 
