@@ -2,8 +2,8 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter" // Set Black formatter specifically for Python files
     },
-
     // 3. Enable format on save globally for all languages
     // This is the key setting to trigger formatting when you save a file
     "editor.formatOnSave": true,
+    "python.analysis.typeCheckingMode": "standard",
 }
