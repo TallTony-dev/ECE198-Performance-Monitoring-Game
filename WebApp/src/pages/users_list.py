@@ -14,14 +14,18 @@ def users_list():
             render_user_card(user, plays)
 
     # Refresh button
-    ui.button("Refresh", on_click=lambda: ui.navigate.reload())
+    ui.button("Refresh", on_click=lambda: ui.navigate.reload()).classes(
+        "mt-4 text-white font-semibold py-2 px-5 rounded-lg "
+        "!bg-[hsl(240_5.9%_10%)] !hover:bg-[hsl(240_5.9%_5%)] "
+        "shadow-md transition-colors duration-200"
+    )
 
 
 def render_user_card(user: User, plays: list[GamePlay]):
     """Render a card for a single user with their gameplay data"""
-    with ui.card().classes("h-60 my-2 p-4 items-center").style(
+    with ui.card().classes("h-60 my-2 p-4 items-center cursor-pointer").style(
         "min-width: 250px; border-radius: 40px;"
-    ):
+    ).on("click", lambda: ui.navigate.to(f"/user/{user.id}")):
         ui.element("div").style(
             "position: absolute; top: 0; left: 0; right: 0; height: 80px; "
             "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); "
