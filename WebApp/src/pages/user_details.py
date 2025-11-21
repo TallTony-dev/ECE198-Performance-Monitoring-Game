@@ -5,14 +5,17 @@ from src.models.gameplay import GamePlay
 from datetime import datetime
 from typing import Tuple
 import statistics
+import plotly.graph_objects as go
+import plotly.express as px
+import numpy as np
 
 # Table column definitions
 TABLE_HEADERS = [
-    {'name': 'index', 'label': '#', 'classes': 'flex-[0.10] min-w-[50px] flex-shrink-0'},
-    {'name': 'timestamp', 'label': 'Timestamp', 'classes': 'flex-[0.20] min-w-[180px] flex-shrink-0'},
-    {'name': 'level', 'label': 'Max Level', 'classes': 'flex-[0.10] min-w-[100px] flex-shrink-0'},
-    {'name': 'response_times', 'label': 'Time spent per Level', 'classes': 'flex-[0.60] min-w-[655px] flex-shrink-0'},
-    {'name': 'warning_level', 'label': 'Warning Level', 'classes': 'flex-[0.15] min-w-[150px] flex-shrink-0'},
+    {'name': 'index', 'label': '#', 'classes': 'flex-[0.05] min-w-[40px] flex-shrink-0'},
+    {'name': 'timestamp', 'label': 'Timestamp', 'classes': 'flex-[0.12] min-w-[130px] flex-shrink-0'},
+    {'name': 'level', 'label': 'Level', 'classes': 'flex-[0.06] min-w-[50px] flex-shrink-0'},
+    {'name': 'response_times', 'label': 'Response Times', 'classes': 'flex-[0.50] min-w-[400px] flex-shrink-0'},
+    {'name': 'warning_level', 'label': 'Status', 'classes': 'flex-[0.10] min-w-[100px] flex-shrink-0'},
 ]
 
 
@@ -43,17 +46,15 @@ def calculate_warning_level(response_times: list[float]) -> Tuple[str, str, str]
 
 
 def render_user_card(user: User):
-    """Render user information card"""
-    with ui.card().classes("my-2 p-4 items-center"):
-        with ui.row().classes("w-full flex-nowrap"):
-            with ui.column().classes("w-30 justify-around"):
-                ui.image("/static/" + user.icon_file).classes("w-30 h-30 mt-2 mb-2").style(
-                    "border-radius: 50%;"
-                )
-            with ui.column().classes("w-50 justify-around"):
-                ui.label(f"{user.name}").classes("text-h2")
-                ui.label(f"User ID: {user.id}").classes("text-gray-300 text-sm pl-2")
-                ui.label(f"Device ID: {user.device_id}").classes("text-gray-300 text-sm pl-2")
+    """Render user information card - compact version"""
+    with ui.card().classes("p-3 items-center"):
+        with ui.row().classes("w-full flex-nowrap items-center gap-3"):
+            ui.image("/static/" + user.icon_file).classes("w-12 h-12").style(
+                "border-radius: 50%;"
+            )
+            with ui.column().classes("gap-0"):
+                ui.label(f"{user.name}").classes("text-lg font-bold")
+                ui.label(f"ID: {user.id} | Device: {user.device_id}").classes("text-gray-400 text-xs")
 
 
 def render_table_header():
@@ -65,30 +66,52 @@ def render_table_header():
 
 
 def render_response_times_cell(response_times: list[float]):
-    """Render response times in chunked format"""
+    """Render response times as a mini sparkline chart"""
     if not response_times:
         ui.label("-").classes("text-gray-400")
         return
 
-    CHUNK_SIZE = 10
-    time_chunks = [response_times[i:i + CHUNK_SIZE] for i in range(0, len(response_times), CHUNK_SIZE)]
+    valid_times = [t for t in response_times if t > 0]
+    if not valid_times:
+        ui.label("-").classes("text-gray-400")
+        return
 
-    with ui.column().classes("w-fit gap-4"):
-        for chunk_index, chunk in enumerate(time_chunks):
-            start_level = chunk_index * CHUNK_SIZE + 1
-            with ui.column().classes("w-full gap-0.5"):
-                # Level labels row
-                with ui.row().classes("w-full justify-start flex-nowrap"):
-                    for i in range(len(chunk)):
-                        ui.label(f"Level {start_level + i}").classes(
-                            "text-xs font-bold text-gray-700 w-[50px] text-left flex-shrink-0"
-                        )
-                # Time values row
-                with ui.row().classes("w-full justify-start flex-nowrap"):
-                    for time_s in chunk:
-                        ui.label(f"{time_s:.3f}s").classes(
-                            "text-xs font-mono text-gray-800 w-[50px] text-left flex-shrink-0"
-                        )
+    # Create mini sparkline
+    levels = list(range(1, len(valid_times) + 1))
+
+    # Determine colors based on threshold
+    colors = ['#22c55e' if t <= 0.5 else '#eab308' if t <= 1.5 else '#ef4444' for t in valid_times]
+
+    fig = go.Figure()
+
+    # Add line
+    fig.add_trace(go.Scatter(
+        x=levels,
+        y=valid_times,
+        mode='lines+markers',
+        line=dict(color='#6366f1', width=1.5),
+        marker=dict(size=3, color=colors),
+        hovertemplate='L%{x}: %{y:.3f}s<extra></extra>'
+    ))
+
+    # Add threshold line
+    fig.add_hline(y=0.5, line_dash="dot", line_color="rgba(34, 197, 94, 0.5)", line_width=1)
+
+    fig.update_layout(
+        height=40,
+        width=320,
+        margin=dict(l=0, r=0, t=0, b=0),
+        showlegend=False,
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+    )
+
+    with ui.row().classes("items-center gap-2"):
+        ui.plotly(fig).classes("").style("width: 320px; height: 40px;")
+        avg_time = statistics.mean(valid_times)
+        ui.label(f"Avg: {avg_time:.2f}s").classes("text-xs text-gray-500")
 
 
 def render_warning_level_cell(response_times: list[float]):
@@ -137,6 +160,395 @@ def render_gameplay_table(plays: list[GamePlay]):
             render_gameplay_row(index, play)
 
 
+def calculate_delirium_risk_score(plays: list[GamePlay]) -> Tuple[float, str, str]:
+    """
+    Calculate delirium risk score based on multiple factors:
+    - Response time trends (worsening = higher risk)
+    - Performance variability
+    - Recent vs historical comparison
+    Returns: (score 0-100, risk level, description)
+    """
+    if len(plays) < 2:
+        return 0, "Insufficient Data", "Need more sessions to assess risk"
+
+    # Get average response times per session
+    session_avgs = []
+    for play in plays:
+        valid_times = [t for t in play.response_times_seconds if t > 0]
+        if valid_times:
+            session_avgs.append(statistics.mean(valid_times))
+
+    if len(session_avgs) < 2:
+        return 0, "Insufficient Data", "Need more valid sessions"
+
+    risk_score = 0
+
+    # Factor 1: Recent performance trend (40% weight)
+    recent = session_avgs[-3:] if len(session_avgs) >= 3 else session_avgs
+    if len(recent) >= 2:
+        trend = (recent[-1] - recent[0]) / len(recent)
+        if trend > 0.5:  # Significant worsening
+            risk_score += 40
+        elif trend > 0.2:
+            risk_score += 25
+        elif trend > 0:
+            risk_score += 10
+
+    # Factor 2: Performance variability (30% weight)
+    if len(session_avgs) >= 3:
+        variability = statistics.stdev(session_avgs) / statistics.mean(session_avgs)
+        if variability > 0.5:
+            risk_score += 30
+        elif variability > 0.3:
+            risk_score += 20
+        elif variability > 0.15:
+            risk_score += 10
+
+    # Factor 3: Absolute performance level (30% weight)
+    latest_avg = session_avgs[-1]
+    if latest_avg > 2.0:
+        risk_score += 30
+    elif latest_avg > 1.5:
+        risk_score += 20
+    elif latest_avg > 1.0:
+        risk_score += 10
+
+    # Determine risk level
+    if risk_score >= 70:
+        return risk_score, "High Risk", "Immediate attention recommended"
+    elif risk_score >= 40:
+        return risk_score, "Moderate Risk", "Monitor closely"
+    elif risk_score >= 20:
+        return risk_score, "Low Risk", "Continue regular monitoring"
+    else:
+        return risk_score, "Minimal Risk", "Performance is stable"
+
+
+def render_performance_summary(plays: list[GamePlay]):
+    """Render compact performance summary in a single card"""
+    if not plays:
+        return
+
+    # Calculate metrics
+    all_times = []
+    all_levels = []
+    for play in plays:
+        valid_times = [t for t in play.response_times_seconds if t > 0]
+        all_times.extend(valid_times)
+        all_levels.append(play.level_reached)
+
+    avg_response = statistics.mean(all_times) if all_times else 0
+    best_level = max(all_levels) if all_levels else 0
+    avg_level = statistics.mean(all_levels) if all_levels else 0
+    total_sessions = len(plays)
+
+    # Calculate consistency
+    if len(all_levels) > 1:
+        consistency = 100 - (statistics.stdev(all_levels) / statistics.mean(all_levels) * 100)
+        consistency = max(0, min(100, consistency))
+    else:
+        consistency = 100
+
+    # Determine colors
+    perf_color = "text-green-600" if avg_response <= 0.5 else "text-yellow-600" if avg_response <= 1.5 else "text-red-600"
+    cons_color = "text-green-600" if consistency >= 70 else "text-yellow-600" if consistency >= 50 else "text-red-600"
+
+    with ui.card().classes("w-full p-3 mb-3"):
+        ui.label("Performance Overview").classes("text-sm font-bold mb-2")
+        with ui.row().classes("w-full justify-between"):
+            with ui.column().classes("items-center flex-1"):
+                ui.label(f"{avg_response:.3f}s").classes(f"text-lg font-bold {perf_color}")
+                ui.label("Avg Response").classes("text-xs text-gray-500")
+            with ui.column().classes("items-center flex-1"):
+                ui.label(str(best_level)).classes("text-lg font-bold text-purple-600")
+                ui.label(f"Best (Avg: {avg_level:.1f})").classes("text-xs text-gray-500")
+            with ui.column().classes("items-center flex-1"):
+                ui.label(str(total_sessions)).classes("text-lg font-bold text-blue-600")
+                ui.label("Sessions").classes("text-xs text-gray-500")
+            with ui.column().classes("items-center flex-1"):
+                ui.label(f"{consistency:.0f}%").classes(f"text-lg font-bold {cons_color}")
+                ui.label("Consistency").classes("text-xs text-gray-500")
+
+
+def render_response_time_trend_chart(plays: list[GamePlay]):
+    """Render response time trend line chart"""
+    if len(plays) < 2:
+        ui.label("Need at least 2 sessions for trend analysis").classes("text-gray-500 italic p-4")
+        return
+
+    session_data = []
+    for i, play in enumerate(plays, 1):
+        valid_times = [t for t in play.response_times_seconds if t > 0]
+        if valid_times:
+            session_data.append({
+                'session': i,
+                'avg_time': statistics.mean(valid_times),
+                'min_time': min(valid_times),
+                'max_time': max(valid_times),
+                'date': play.timestamp.strftime("%m/%d %H:%M")
+            })
+
+    if len(session_data) < 2:
+        return
+
+    sessions = [d['session'] for d in session_data]
+    avg_times = [d['avg_time'] for d in session_data]
+    min_times = [d['min_time'] for d in session_data]
+    max_times = [d['max_time'] for d in session_data]
+    dates = [d['date'] for d in session_data]
+
+    fig = go.Figure()
+
+    # Add range area
+    fig.add_trace(go.Scatter(
+        x=sessions + sessions[::-1],
+        y=max_times + min_times[::-1],
+        fill='toself',
+        fillcolor='rgba(99, 102, 241, 0.1)',
+        line=dict(color='rgba(255,255,255,0)'),
+        hoverinfo='skip',
+        showlegend=False
+    ))
+
+    # Add average line
+    fig.add_trace(go.Scatter(
+        x=sessions,
+        y=avg_times,
+        mode='lines+markers',
+        name='Avg Response Time',
+        line=dict(color='#6366f1', width=3),
+        marker=dict(size=8),
+        text=dates,
+        hovertemplate='Session %{x}<br>Avg: %{y:.3f}s<br>%{text}<extra></extra>'
+    ))
+
+    # Add threshold lines
+    fig.add_hline(y=0.5, line_dash="dash", line_color="green",
+                  annotation_text="Good (0.5s)", annotation_position="right")
+    fig.add_hline(y=1.5, line_dash="dash", line_color="orange",
+                  annotation_text="Warning (1.5s)", annotation_position="right")
+
+    fig.update_layout(
+        title="Response Time Trend",
+        xaxis_title="Session",
+        yaxis_title="Response Time (s)",
+        height=300,
+        margin=dict(l=40, r=40, t=40, b=40),
+        showlegend=False
+    )
+
+    ui.plotly(fig).classes("w-full")
+
+
+def render_level_progression_chart(plays: list[GamePlay]):
+    """Render level progression bar chart"""
+    if not plays:
+        return
+
+    sessions = list(range(1, len(plays) + 1))
+    levels = [play.level_reached for play in plays]
+    dates = [play.timestamp.strftime("%m/%d %H:%M") for play in plays]
+
+    # Color based on performance
+    colors = []
+    for level in levels:
+        if level >= 10:
+            colors.append('#22c55e')  # green
+        elif level >= 5:
+            colors.append('#eab308')  # yellow
+        else:
+            colors.append('#ef4444')  # red
+
+    fig = go.Figure(data=[
+        go.Bar(
+            x=sessions,
+            y=levels,
+            marker_color=colors,
+            text=levels,
+            textposition='auto',
+            hovertemplate='Session %{x}<br>Level: %{y}<br>%{customdata}<extra></extra>',
+            customdata=dates
+        )
+    ])
+
+    fig.update_layout(
+        title="Level Progression",
+        xaxis_title="Session",
+        yaxis_title="Level",
+        height=200,
+        margin=dict(l=30, r=10, t=30, b=30)
+    )
+
+    ui.plotly(fig).classes("w-full")
+
+
+def render_delirium_risk_gauge(plays: list[GamePlay]):
+    """Render delirium risk assessment gauge"""
+    risk_score, risk_level, description = calculate_delirium_risk_score(plays)
+
+    # Determine color
+    if risk_score >= 70:
+        color = "red"
+        bar_color = "#ef4444"
+    elif risk_score >= 40:
+        color = "orange"
+        bar_color = "#f97316"
+    elif risk_score >= 20:
+        color = "yellow"
+        bar_color = "#eab308"
+    else:
+        color = "green"
+        bar_color = "#22c55e"
+
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=risk_score,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        title={'text': "Delirium Risk Score", 'font': {'size': 16}},
+        gauge={
+            'axis': {'range': [0, 100], 'tickwidth': 1},
+            'bar': {'color': bar_color},
+            'steps': [
+                {'range': [0, 20], 'color': 'rgba(34, 197, 94, 0.3)'},
+                {'range': [20, 40], 'color': 'rgba(234, 179, 8, 0.3)'},
+                {'range': [40, 70], 'color': 'rgba(249, 115, 22, 0.3)'},
+                {'range': [70, 100], 'color': 'rgba(239, 68, 68, 0.3)'}
+            ],
+            'threshold': {
+                'line': {'color': "black", 'width': 2},
+                'thickness': 0.75,
+                'value': risk_score
+            }
+        }
+    ))
+
+    fig.update_layout(
+        height=200,
+        margin=dict(l=20, r=20, t=50, b=10)
+    )
+
+    with ui.card().classes("p-3 h-full"):
+        ui.plotly(fig).classes("w-full")
+        risk_colors = {
+            "High Risk": "text-red-600 bg-red-100",
+            "Moderate Risk": "text-orange-600 bg-orange-100",
+            "Low Risk": "text-yellow-600 bg-yellow-100",
+            "Minimal Risk": "text-green-600 bg-green-100",
+            "Insufficient Data": "text-gray-600 bg-gray-100"
+        }
+        with ui.row().classes("w-full justify-center"):
+            with ui.element('div').classes(f"px-3 py-1 rounded-full {risk_colors.get(risk_level, '')}"):
+                ui.label(risk_level).classes("font-semibold text-sm")
+
+
+def render_response_time_distribution(plays: list[GamePlay]):
+    """Render response time distribution histogram"""
+    all_times = []
+    for play in plays:
+        all_times.extend([t for t in play.response_times_seconds if t > 0])
+
+    if not all_times:
+        return
+
+    fig = go.Figure(data=[
+        go.Histogram(
+            x=all_times,
+            nbinsx=20,
+            marker_color='#6366f1',
+            opacity=0.75
+        )
+    ])
+
+    # Add threshold lines
+    fig.add_vline(x=0.5, line_dash="dash", line_color="green",
+                  annotation_text="Good", annotation_position="top")
+    fig.add_vline(x=1.5, line_dash="dash", line_color="orange",
+                  annotation_text="Warning", annotation_position="top")
+
+    fig.update_layout(
+        title="Response Time Distribution",
+        xaxis_title="Response Time (s)",
+        yaxis_title="Frequency",
+        height=300,
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+
+    ui.plotly(fig).classes("w-full")
+
+
+def render_performance_heatmap(plays: list[GamePlay]):
+    """Render performance heatmap showing response times per level across sessions"""
+    if len(plays) < 2:
+        return
+
+    # Get max levels across all sessions
+    max_level = max(play.level_reached for play in plays)
+    max_level = min(max_level, 15)  # Cap at 15 for readability
+
+    # Build heatmap data
+    z_data = []
+    session_labels = []
+
+    for i, play in enumerate(plays[-10:], 1):  # Last 10 sessions
+        row = []
+        for level in range(max_level):
+            if level < len(play.response_times_seconds):
+                row.append(play.response_times_seconds[level])
+            else:
+                row.append(None)
+        z_data.append(row)
+        session_labels.append(f"S{i}")
+
+    level_labels = [f"L{i+1}" for i in range(max_level)]
+
+    fig = go.Figure(data=go.Heatmap(
+        z=z_data,
+        x=level_labels,
+        y=session_labels,
+        colorscale=[
+            [0, '#22c55e'],      # green for fast
+            [0.33, '#eab308'],   # yellow
+            [0.66, '#f97316'],   # orange
+            [1, '#ef4444']       # red for slow
+        ],
+        hoverongaps=False,
+        hovertemplate='Session: %{y}<br>Level: %{x}<br>Time: %{z:.3f}s<extra></extra>'
+    ))
+
+    fig.update_layout(
+        title="Response Time Heatmap",
+        xaxis_title="Level",
+        yaxis_title="Session",
+        height=200,
+        margin=dict(l=30, r=10, t=30, b=30)
+    )
+
+    ui.plotly(fig).classes("w-full")
+
+
+def render_visualizations(plays: list[GamePlay]):
+    """Render all data visualizations - compact layout"""
+    if not plays:
+        with ui.card().classes("w-full p-4 text-center"):
+            ui.label("No gameplay data available").classes("text-gray-500")
+        return
+
+    # Compact Performance Summary
+    render_performance_summary(plays)
+
+    # Charts row: Level Trend, Heatmap, and Risk Gauge
+    with ui.row().classes("w-full gap-3 mb-3"):
+        with ui.card().classes("flex-1 p-2"):
+            render_level_progression_chart(plays)
+        with ui.card().classes("flex-1 p-2"):
+            if len(plays) >= 2:
+                render_performance_heatmap(plays)
+            else:
+                ui.label("Need 2+ sessions for heatmap").classes("text-gray-400 text-xs p-4")
+        with ui.column().classes("w-128 min-w-[500px]"):
+            render_delirium_risk_gauge(plays)
+
+
 def user_details(userid: int):
     """Display user details page with gameplay history"""
     # Find user by id
@@ -149,12 +561,13 @@ def user_details(userid: int):
     # Get user's gameplays
     plays = game_plays.get(user, [])
 
-    # Layout
-    with ui.row().classes("w-full flex-nowrap"):
-        with ui.column().classes("w-[80%]"):
-            render_user_card(user)
-        with ui.column().classes("w-[20%]"):
-            ui.log(100)
+    # User card
+    render_user_card(user)
+
+    ui.separator()
+
+    # Data Visualizations section
+    render_visualizations(plays)
 
     ui.separator()
 
