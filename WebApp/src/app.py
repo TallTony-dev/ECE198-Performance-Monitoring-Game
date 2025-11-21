@@ -15,9 +15,10 @@ def register_routes() -> None:
     def raw_data_records():
         raw_data_records_page()
 
-    @ui.page("/user/{username}")
-    def user_page(username: str):
-        user_details(username)
+    @ui.page("/user/{userid}")
+    def user_page(userid: str):
+        print(f"Loading user page for: {userid}")
+        user_details(int(userid))
 
     @app.post("/device")
     def device_webhook(data: dict):
