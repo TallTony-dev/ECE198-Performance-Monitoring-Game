@@ -14,7 +14,7 @@ USERS = [
     User(
         id=2,
         name="Tony ",
-        device_id="AA:BB:CC:DD:EE:FF",
+        device_id="00:4B:12:EF:A5:38",
         icon_file="user_icon_2.png",
     ),
     User(
