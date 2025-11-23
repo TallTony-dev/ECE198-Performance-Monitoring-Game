@@ -224,6 +224,73 @@ def calculate_delirium_risk_score(plays: list[GamePlay]) -> Tuple[float, str, st
         return risk_score, "Minimal Risk", "Performance is stable"
 
 
+def calculate_performance_score(plays: list[GamePlay]) -> Tuple[float, str, str]:
+    """
+    Calculate overall performance score (0-100) with emphasis on levels reached.
+
+    Scoring breakdown:
+    - Level performance: 70% weight (best level / 11 max)
+    - Response time performance: 30% weight (faster = higher score)
+
+    Returns: (score, grade, description)
+    """
+    if not plays:
+        return 0, "N/A", "No data available"
+
+    all_times = []
+    all_levels = []
+    for play in plays:
+        valid_times = [t for t in play.response_times_seconds if t > 0]
+        all_times.extend(valid_times)
+        all_levels.append(play.level_reached)
+
+    if not all_levels:
+        return 0, "N/A", "No valid gameplay data"
+
+    # Level component (70% weight) - max level is ~11
+    MAX_LEVEL = 11
+    best_level = max(all_levels)
+    avg_level = statistics.mean(all_levels)
+
+    # Use weighted combination of best and average level
+    level_metric = (best_level * 0.6 + avg_level * 0.4) / MAX_LEVEL
+    level_score = min(level_metric * 70, 70)  # Cap at 70 points
+
+    # Response time component (30% weight)
+    # Scale: 0.3s or less = 30pts, 2.0s or more = 0pts
+    if all_times:
+        avg_response = statistics.mean(all_times)
+        if avg_response <= 0.3:
+            response_score = 30
+        elif avg_response >= 2.0:
+            response_score = 0
+        else:
+            # Linear interpolation between 0.3s (30pts) and 2.0s (0pts)
+            response_score = 30 * (1 - (avg_response - 0.3) / 1.7)
+    else:
+        response_score = 0
+
+    total_score = level_score + response_score
+
+    # Determine grade
+    if total_score >= 85:
+        return total_score, "A+", "Excellent cognitive performance"
+    elif total_score >= 75:
+        return total_score, "A", "Very good performance"
+    elif total_score >= 65:
+        return total_score, "B+", "Good performance"
+    elif total_score >= 55:
+        return total_score, "B", "Above average performance"
+    elif total_score >= 45:
+        return total_score, "C+", "Average performance"
+    elif total_score >= 35:
+        return total_score, "C", "Below average performance"
+    elif total_score >= 25:
+        return total_score, "D", "Needs improvement"
+    else:
+        return total_score, "F", "Poor performance - monitor closely"
+
+
 def render_performance_summary(plays: list[GamePlay]):
     """Render compact performance summary in a single card"""
     if not plays:
@@ -242,6 +309,9 @@ def render_performance_summary(plays: list[GamePlay]):
     avg_level = statistics.mean(all_levels) if all_levels else 0
     total_sessions = len(plays)
 
+    # Calculate performance score
+    score, grade, score_desc = calculate_performance_score(plays)
+
     # Calculate consistency
     if len(all_levels) > 1:
         consistency = 100 - (statistics.stdev(all_levels) / statistics.mean(all_levels) * 100)
@@ -253,15 +323,30 @@ def render_performance_summary(plays: list[GamePlay]):
     perf_color = "text-green-600" if avg_response <= 0.5 else "text-yellow-600" if avg_response <= 1.5 else "text-red-600"
     cons_color = "text-green-600" if consistency >= 70 else "text-yellow-600" if consistency >= 50 else "text-red-600"
 
+    # Determine score color
+    if score >= 75:
+        score_color = "text-green-600"
+    elif score >= 55:
+        score_color = "text-blue-600"
+    elif score >= 35:
+        score_color = "text-yellow-600"
+    else:
+        score_color = "text-red-600"
+
     with ui.card().classes("w-full p-3 mb-3"):
         ui.label("Performance Overview").classes("text-sm font-bold mb-2")
         with ui.row().classes("w-full justify-between"):
             with ui.column().classes("items-center flex-1"):
-                ui.label(f"{avg_response:.3f}s").classes(f"text-lg font-bold {perf_color}")
-                ui.label("Avg Response").classes("text-xs text-gray-500")
+                with ui.row().classes("items-baseline gap-1"):
+                    ui.label(f"{score:.0f}").classes(f"text-2xl font-bold {score_color}")
+                    ui.label(f"({grade})").classes(f"text-sm font-semibold {score_color}")
+                ui.label("Performance Score").classes("text-xs text-gray-500")
             with ui.column().classes("items-center flex-1"):
                 ui.label(str(best_level)).classes("text-lg font-bold text-purple-600")
-                ui.label(f"Best (Avg: {avg_level:.1f})").classes("text-xs text-gray-500")
+                ui.label(f"Best Level (Avg: {avg_level:.1f})").classes("text-xs text-gray-500")
+            with ui.column().classes("items-center flex-1"):
+                ui.label(f"{avg_response:.3f}s").classes(f"text-lg font-bold {perf_color}")
+                ui.label("Avg Response").classes("text-xs text-gray-500")
             with ui.column().classes("items-center flex-1"):
                 ui.label(str(total_sessions)).classes("text-lg font-bold text-blue-600")
                 ui.label("Sessions").classes("text-xs text-gray-500")
@@ -427,18 +512,25 @@ def render_delirium_risk_gauge(plays: list[GamePlay]):
         margin=dict(l=20, r=20, t=50, b=10)
     )
 
-    with ui.card().classes("p-3 h-full"):
-        ui.plotly(fig).classes("w-full")
-        risk_colors = {
-            "High Risk": "text-red-600 bg-red-100",
-            "Moderate Risk": "text-orange-600 bg-orange-100",
-            "Low Risk": "text-yellow-600 bg-yellow-100",
-            "Minimal Risk": "text-green-600 bg-green-100",
-            "Insufficient Data": "text-gray-600 bg-gray-100"
-        }
-        with ui.row().classes("w-full justify-center"):
-            with ui.element('div').classes(f"px-3 py-1 rounded-full {risk_colors.get(risk_level, '')}"):
-                ui.label(risk_level).classes("font-semibold text-sm")
+    with ui.card().classes("p-4 w-full"):
+        with ui.row().classes("w-full items-center gap-6"):
+            # Gauge on the left
+            with ui.column().classes("flex-shrink-0"):
+                ui.plotly(fig).classes("").style("width: 280px; height: 200px;")
+
+            # Risk info on the right
+            with ui.column().classes("flex-1 gap-2"):
+                ui.label("Delirium Risk Assessment").classes("text-lg font-bold")
+                risk_colors = {
+                    "High Risk": "text-red-600 bg-red-100",
+                    "Moderate Risk": "text-orange-600 bg-orange-100",
+                    "Low Risk": "text-yellow-600 bg-yellow-100",
+                    "Minimal Risk": "text-green-600 bg-green-100",
+                    "Insufficient Data": "text-gray-600 bg-gray-100"
+                }
+                with ui.element('div').classes(f"px-4 py-2 rounded-lg {risk_colors.get(risk_level, '')} w-fit"):
+                    ui.label(risk_level).classes("font-bold text-base")
+                ui.label(description).classes("text-sm text-gray-600")
 
 
 def render_response_time_distribution(plays: list[GamePlay]):
@@ -536,7 +628,7 @@ def render_visualizations(plays: list[GamePlay]):
     # Compact Performance Summary
     render_performance_summary(plays)
 
-    # Charts row: Level Trend, Heatmap, and Risk Gauge
+    # Charts row: Level Trend and Heatmap
     with ui.row().classes("w-full gap-3 mb-3"):
         with ui.card().classes("flex-1 p-2"):
             render_level_progression_chart(plays)
@@ -545,7 +637,10 @@ def render_visualizations(plays: list[GamePlay]):
                 render_performance_heatmap(plays)
             else:
                 ui.label("Need 2+ sessions for heatmap").classes("text-gray-400 text-xs p-4")
-        with ui.column().classes("w-128 min-w-[500px]"):
+
+    # Delirium Risk Panel - full width for better layout
+    with ui.row().classes("w-full gap-3 mb-3"):
+        with ui.column().classes("flex-1"):
             render_delirium_risk_gauge(plays)
 
 
