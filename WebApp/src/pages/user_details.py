@@ -32,8 +32,8 @@ def calculate_warning_level(response_times: list[float]) -> Tuple[str, str, str]
         avg_time = statistics.mean(valid_times)
         avg_time_str = f"{avg_time:.3f}s"
 
-        GOOD_THRESHOLD = 0.50
-        NORMAL_THRESHOLD = 1.50
+        GOOD_THRESHOLD = 1.00
+        NORMAL_THRESHOLD = 3.00
 
         if avg_time <= GOOD_THRESHOLD:
             return "Good", "text-green-700 bg-green-100 font-semibold", avg_time_str
