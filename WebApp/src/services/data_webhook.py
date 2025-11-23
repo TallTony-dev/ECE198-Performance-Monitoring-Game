@@ -67,6 +67,10 @@ def handle_device_webhook(data: dict):
     level_reached: int = data.get("level_reached", 0)
     response_times: list[float] = data.get("response_times", [])
 
+    # Re-evaluate response times
+    for i in range(len(response_times)):
+        response_times[i] /= (i+1)
+
     # Print to console
     table = Table(title="Device Data")
     table.add_column("Entity", style="cyan", no_wrap=True)
